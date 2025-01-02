@@ -115,30 +115,30 @@ def win_probability_visualize(record):
 def main():
     st.title("England vs Australia Match Prediction")
     
-    # Upload Excel file (file uploader widget)
-    uploaded_file = st.file_uploader("Upload CSV File", type="csv")
-    if uploaded_file is not None:
-        data = loadcleandata(uploaded_file)
+    # Use the file name directly since the file is already in the same directory
+    file_path = "australia vs england.csv"
 
-        toss_winner = input_toss()
+    data = loadcleandata(file_path)
 
-        # Train linear regression models
-        data, models_eng, models_aus, en = prediction(data, toss_winner)
+    toss_winner = input_toss()
 
-        # Get user input for match format
-        match_format = st.selectbox("Enter the Match Format", ["T20", "ODI", "Test"])
+    # Train linear regression models
+    data, models_eng, models_aus, en = prediction(data, toss_winner)
 
-        try:
-            # Predict win probabilities for the chosen format
-            win_england, win_australia = matchs_format(models_eng, models_aus, en, match_format)
-            st.write(f"Predicted England Win Probability: {win_england:.2f}%")
-            st.write(f"Predicted Australia Win Probability: {win_australia:.2f}%")
-        except ValueError as e:
-            st.error(str(e))  # Show error message if the input format is invalid
+    # Get user input for match format
+    match_format = st.selectbox("Enter the Match Format", ["T20", "ODI", "Test"])
 
-        # Visualize predictions
-        predictions_visualizing(data)
-        win_probability_visualize(data)
+    try:
+        # Predict win probabilities for the chosen format
+        win_england, win_australia = matchs_format(models_eng, models_aus, en, match_format)
+        st.write(f"Predicted England Win Probability: {win_england:.2f}%")
+        st.write(f"Predicted Australia Win Probability: {win_australia:.2f}%")
+    except ValueError as e:
+        st.error(str(e))  # Show error message if the input format is invalid
+
+    # Visualize predictions
+    predictions_visualizing(data)
+    win_probability_visualize(data)
 
 if __name__ == "__main__":
     main()
