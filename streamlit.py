@@ -1,5 +1,5 @@
 import pandas as pd
-import matplot as plt
+import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import LabelEncoder
