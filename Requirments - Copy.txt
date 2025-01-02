@@ -1,6 +1,5 @@
-streamlit
 pandas
 matplot
 seaborn
-sklearn
-openpyxl
+scikit-learn
+streamlit
