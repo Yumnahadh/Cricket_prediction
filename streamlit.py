@@ -8,7 +8,7 @@ import streamlit as st
 
 # Function to load and clean data
 def loadcleandata(file_path):
-    record= pd.read_excel(file_path)
+    record = pd.read_csv(file_path)
     columns = [
         "Format", "Total Matches Played", "England Wins", "England Losses",
         "Australia Wins", "Australia Losses", "Ties/Draws", "No Result",
@@ -31,7 +31,7 @@ def input_toss():
 # Prediction using Linear Regression model
 def prediction(record, toss_winner):
     en = LabelEncoder()  # This will convert text or any data to numeric value
-    record["Format Encoded"] = en.fit_transform(record["Format"])  # Used for fitting data and transforming it 
+    record["Format Encoded"] = en.fit_transform(record["Format"])  # Used for fitting data and transforming it
 
     S = record[["Format Encoded"]]
     z_england = record["England Win %"]
@@ -40,6 +40,7 @@ def prediction(record, toss_winner):
     models_aus = LinearRegression().fit(S, z_australia)
     record["Predicted England Win %"] = models_eng.predict(S)
     record["Predicted Australia Win %"] = models_aus.predict(S)
+    
     # Calculate Average Squared difference between actual vs predicted 
     st.write("England MSE:", mean_squared_error(z_england, record["Predicted England Win %"]))
     st.write("Australia MSE:", mean_squared_error(z_australia, record["Predicted Australia Win %"]))
@@ -108,28 +109,27 @@ def win_probability_visualize(record):
 def main():
     st.title("England vs Australia Match Prediction")
     
-    # Upload Excel file (file uploader widget)
-    uploaded_file = st.file_uploader("Upload Excel File", type="xlsx")
-    if uploaded_file is not None:
-        data = loadcleandata(uploaded_file)
-        
-        toss_winner = input_toss()
-        
-        # Train linear regression models
-        data, models_eng, models_aus, en = prediction(data, toss_winner)
+    # Load and clean data
+    file_path = "australia vs england.csv"
+    data = loadcleandata(file_path)
+    
+    toss_winner = input_toss()
+    
+    # Train linear regression models
+    data, models_eng, models_aus, en = prediction(data, toss_winner)
 
-        # Get user input for match format
-        match_format = st.selectbox("Enter the Match Format", ["T20", "ODI", "Test"])
+    # Get user input for match format
+    match_format = st.selectbox("Enter the Match Format", ["T20", "ODI", "Test"])
 
-        # Predict win probabilities for the chosen format
-        win_england, win_australia = matchs_format(models_eng, models_aus, en, match_format)
+    # Predict win probabilities for the chosen format
+    win_england, win_australia = matchs_format(models_eng, models_aus, en, match_format)
 
-        st.write(f"Predicted England Win Probability: {win_england:.2f}%")
-        st.write(f"Predicted Australia Win Probability: {win_australia:.2f}%")
+    st.write(f"Predicted England Win Probability: {win_england:.2f}%")
+    st.write(f"Predicted Australia Win Probability: {win_australia:.2f}%")
 
-        # Visualize predictions
-        predictions_visualizing(data)
-        win_probability_visualize(data)
+    # Visualize predictions
+    predictions_visualizing(data)
+    win_probability_visualize(data)
 
 if __name__ == "__main__":
     main()
