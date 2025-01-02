@@ -31,7 +31,7 @@ def input_toss():
 # Prediction using Linear Regression model
 def prediction(record, toss_winner):
     en = LabelEncoder()  # This will convert text or any data to numeric value
-    record["Format Encoded"] = en.fit_transform(record["Format"])  # Used for fitting data and transforming it
+    record["Format Encoded"] = en.fit_transform(record["Format"])  # Used for fitting data and transforming it 
 
     S = record[["Format Encoded"]]
     z_england = record["England Win %"]
@@ -40,7 +40,6 @@ def prediction(record, toss_winner):
     models_aus = LinearRegression().fit(S, z_australia)
     record["Predicted England Win %"] = models_eng.predict(S)
     record["Predicted Australia Win %"] = models_aus.predict(S)
-    
     # Calculate Average Squared difference between actual vs predicted 
     st.write("England MSE:", mean_squared_error(z_england, record["Predicted England Win %"]))
     st.write("Australia MSE:", mean_squared_error(z_australia, record["Predicted Australia Win %"]))
@@ -54,11 +53,15 @@ def prediction(record, toss_winner):
 
 # Predicts the win probabilities for both England and Australia based on the given match format
 def matchs_format(models_eng, models_aus, en, match_format):
-    format = en.transform([match_format])[0]
-    format_encoded_df = pd.DataFrame([[format]], columns=["Format Encoded"])
-    win_england = models_eng.predict(format_encoded_df)[0]
-    win_australia = models_aus.predict(format_encoded_df)[0]
-    return win_england, win_australia
+    try:
+        # Ensure the match_format is in the recognized formats
+        format_encoded = en.transform([match_format])[0]  # Transforming match format
+        format_encoded_df = pd.DataFrame([[format_encoded]], columns=["Format Encoded"])
+        win_england = models_eng.predict(format_encoded_df)[0]
+        win_australia = models_aus.predict(format_encoded_df)[0]
+        return win_england, win_australia
+    except ValueError:
+        raise ValueError(f"Invalid match format: {match_format}. Please enter one of the following: {', '.join(en.classes_)}")
 
 # Visualization: Actual vs Predicted
 def predictions_visualizing(record):
@@ -69,6 +72,7 @@ def predictions_visualizing(record):
     plt.plot(record["Format"], record["Predicted Australia Win %"], label="Australia Predicted", linestyle="--", color="yellow")
 
     for i in range(len(record)):
+        # For adding labels on coordinates
         if record["Predicted England Win %"][i] > record["Predicted Australia Win %"][i]:
             plt.text(record["Format"][i], record["Predicted England Win %"][i], "England", color="red", ha='center', va='bottom', weight='bold')
         else:
@@ -92,6 +96,8 @@ def win_probability_visualize(record):
     plt.figure(figsize=(10, 4))
     bars = plt.barh(teams, probability_winning, color=colors, edgecolor='black', height=0.6)
     for bar, probability in zip(bars, probability_winning):
+        # Put the tasks in bars
+        # Setting horizontal and vertical alignments of the figure
         plt.text(bar.get_width() / 2, bar.get_y() + bar.get_height() / 2, 
                  f"{probability:.2f}%", ha='center', va='center', color='blue', fontsize=12, weight='bold')
 
@@ -109,27 +115,30 @@ def win_probability_visualize(record):
 def main():
     st.title("England vs Australia Match Prediction")
     
-    # Load and clean data
-    file_path = "australia vs england.csv"
-    data = loadcleandata(file_path)
-    
-    toss_winner = input_toss()
-    
-    # Train linear regression models
-    data, models_eng, models_aus, en = prediction(data, toss_winner)
+    # Upload Excel file (file uploader widget)
+    uploaded_file = st.file_uploader("Upload CSV File", type="csv")
+    if uploaded_file is not None:
+        data = loadcleandata(uploaded_file)
 
-    # Get user input for match format
-    match_format = st.selectbox("Enter the Match Format", ["T20", "ODI", "Test"])
+        toss_winner = input_toss()
 
-    # Predict win probabilities for the chosen format
-    win_england, win_australia = matchs_format(models_eng, models_aus, en, match_format)
+        # Train linear regression models
+        data, models_eng, models_aus, en = prediction(data, toss_winner)
 
-    st.write(f"Predicted England Win Probability: {win_england:.2f}%")
-    st.write(f"Predicted Australia Win Probability: {win_australia:.2f}%")
+        # Get user input for match format
+        match_format = st.selectbox("Enter the Match Format", ["T20", "ODI", "Test"])
 
-    # Visualize predictions
-    predictions_visualizing(data)
-    win_probability_visualize(data)
+        try:
+            # Predict win probabilities for the chosen format
+            win_england, win_australia = matchs_format(models_eng, models_aus, en, match_format)
+            st.write(f"Predicted England Win Probability: {win_england:.2f}%")
+            st.write(f"Predicted Australia Win Probability: {win_australia:.2f}%")
+        except ValueError as e:
+            st.error(str(e))  # Show error message if the input format is invalid
+
+        # Visualize predictions
+        predictions_visualizing(data)
+        win_probability_visualize(data)
 
 if __name__ == "__main__":
     main()
